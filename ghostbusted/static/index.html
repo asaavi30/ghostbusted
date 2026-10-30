@@ -477,14 +477,15 @@ async function loadJobs(){
       <div><b>${esc(j.title)}</b> <span class="muted">· ${esc(j.company)}</span><div class="muted small">${esc(j.headline||'')}</div>
         <div class="muted small mono">${hist.includes('→')?'history: '+esc(hist)+' · ':''}checked ${esc((j.last_checked||'').slice(0,10))}</div></div>
       <div class="row"><select onchange="setStatus(${j.id}, this.value)">${opts.map(o=>`<option ${o===j.status?'selected':''}>${o}</option>`).join('')}</select>
-        <button class="ghostbtn" onclick="draft(${j.id})">Follow-up</button>
         <button class="ghostbtn" onclick="del(${j.id})" title="Delete">✕</button></div></div>`;
   }).join('');
 }
 
 async function draft(id){
   $('#draftBox').innerHTML = '<div class="card muted">Writing with Nemotron Super…</div>';
-  const d = await api(`/api/applications/${id}/followup`, {method:'POST'});
+  let d;
+  try { d = await api(`/api/applications/${id}/followup`, {method:'POST'}); }
+  catch (e) { d = {detail: 'Something went wrong writing the follow-up. Try again in a minute.'}; }
   if (!d.draft) { $('#draftBox').innerHTML = `<div class="card" style="color:var(--ghost)">${esc(d.detail || 'Could not write the follow-up.')}</div>`; return; }
   $('#draftBox').innerHTML = `<div class="card"><h3>Follow-up draft</h3><pre class="draft">${esc(d.draft)}</pre>
     <div class="row" style="margin-top:10px"><button class="go" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(d.draft))});api('/api/applications/${id}/followup/sent',{method:'POST'});toast('Copied')">Copy & mark sent</button></div></div>`;
