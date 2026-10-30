@@ -149,11 +149,7 @@ footer{color:var(--mute);font-size:12px;text-align:center;padding:30px 0}
     <div class="card">
       <textarea id="inp" rows="4" placeholder="https://jobs.example.com/junior-analyst   ·   or paste the full job description"></textarea>
       <div class="row" style="margin-top:12px">
-        <button class="go" id="goBtn">Bust it</button>
-        <span class="muted small">or try:</span>
-        <button class="chip" data-try="ghost">a sus posting</button>
-        <button class="chip" data-try="real">a legit posting</button>
-      </div>
+        <button class="go" id="goBtn">Bust it</button>      </div>
       <div id="log"></div>
     </div>
     <div id="result"></div>
@@ -312,20 +308,12 @@ async function loadCompanies(){
 }
 
 api('/api/health').then(h => {
-  $('#demoBadge').hidden = !h.demo;
-  if (h.public && !h.demo) $('.wrap').insertAdjacentHTML('afterbegin',
+  $('#demoBadge').hidden = !h.demo;  if (h.public && !h.demo) $('.wrap').insertAdjacentHTML('afterbegin',
     `<div class="callout small" style="margin:0 0 14px">👋 Public demo: ${h.limit_per_visitor} live checks per visitor per day. This demo is shared, so please don't upload a real resume. Run it locally for your own private copy (see the GitHub README).</div>`);
   $('#modelInfo').textContent = h.demo ? 'demo mode (add API keys for live runs)' : `${h.models.nano.split('/').pop()} · ${h.models.ultra.split('/').pop()}`;
 });
 refreshBell();
 
-// try buttons
-$$('[data-try]').forEach(b => b.onclick = () => {
-  $('#inp').value = b.dataset.try === 'real'
-    ? 'Tandemvolt Robotics - Software Engineer, New Grad (Austin, TX). Pay: $118,000 - $135,000. Start date: January 2027. Team: Fleet Autonomy. You will ship code to our warehouse robot fleet in your first month. Requirements: Python or C++, data structures, Linux.'
-    : 'Quillery Analytics - Junior Data Analyst (Remote, US). We are always looking for passionate analysts to join our talent community! While there may be no immediate opening, we are building a pipeline for future opportunities. Requirements: SQL, Python, Tableau, dbt, Airflow, Spark, AWS, 3+ years experience.';
-  bust();
-});
 $('#goBtn').onclick = bust;
 $('#inp').addEventListener('keydown', e => { if (e.key==='Enter' && (e.metaKey||e.ctrlKey)) bust(); });
 
