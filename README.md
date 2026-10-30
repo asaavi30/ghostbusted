@@ -39,7 +39,6 @@ All model calls go to **NVIDIA Nemotron on Nebius Token Factory** (OpenAI-compat
 | Task | Model | Why |
 |---|---|---|
 | Parse the posting into structured JSON | **Nemotron 3 Nano** | Fast, cheap extraction |
-| Draft follow-up emails | **Nemotron 3 Super** | Good writing at low latency |
 | Final ghost verdict over all evidence + resume fit | **Nemotron 3 Ultra** | The hard multi-source reasoning call |
 
 If a model is unavailable, `llm.py` falls back down the chain so a demo never dies. Nemotron's `<think>` traces are stripped, JSON is validated and repaired, and **any source URL the model cites that wasn't in the Tavily evidence is dropped**, so the receipts can't be hallucinated.
@@ -51,7 +50,7 @@ Tavily is the evidence engine:
 - Results stream into the UI as each investigation finishes, so you watch the agent work.
 
 ## Nebius services
-- **Nebius Token Factory:** all inference (Nemotron Nano / Super / Ultra).
+- **Nebius Token Factory:** all inference (Nemotron Nano / Ultra).
 - **Nebius Serverless Endpoint:** hosts the web app (`Dockerfile`, port 8000).
 - **Nebius Serverless Job:** runs the daily watcher (`python -m ghostbusted.daily`) on a schedule.
 
@@ -60,7 +59,7 @@ Tavily is the evidence engine:
 Browser ──SSE──> FastAPI (main.py)
                    ├─ analyzer.py   pipeline: read → parse → investigate → red flags → verdict
                    │    ├─ search.py  Tavily Extract + 5 parallel Tavily Searches
-                   │    └─ llm.py     Nemotron routing on Token Factory (nano/super/ultra + fallback)
+                   │    └─ llm.py     Nemotron routing on Token Factory (nano/ultra + fallback)
                    ├─ db.py         SQLite memory: profile, jobs, score history, alerts
                    └─ daily.py      always-on watcher (Nebius Serverless Job)
 ```
@@ -94,7 +93,6 @@ python -m ghostbusted.daily
 | POST | `/api/analyze` | `{url}` or `{text}` → Server-Sent Events: live steps, then the report |
 | GET | `/api/applications` | your tracked jobs |
 | PATCH | `/api/applications/{id}` | `{status}`: saved, applied, interviewing, offer, rejected, ghosted |
-| POST | `/api/applications/{id}/followup` | drafted follow-up email (Nemotron Super) |
 | GET/PUT | `/api/profile` | resume and goals (memory) |
 | GET | `/api/events` | ghost alerts and follow-up nudges |
 | POST | `/api/daily` | run the daily watcher now |
