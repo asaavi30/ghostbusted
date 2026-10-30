@@ -5,7 +5,7 @@
 Built for the **Nebius x NVIDIA Global AI Hackathon, Personal AI Track.**
 © 2026 Asaavi Anil Tupsounder · License: Apache 2.0.
 
-**Live demo:** [https://ghostbusted-xxxx.onrender.com](https://ghostbusted.onrender.com)
+**Live demo:** [https://ghostbusted.onrender.com](https://ghostbusted.onrender.com)
 
 ---
 
@@ -22,8 +22,7 @@ Ghost jobs are postings with no real intent to hire: evergreen "talent pools," r
    - the company's recent funding and health
    - red flags in the posting text (talent-pool language, no salary, stale date, unrealistic entry-level requirements)
 3. You get a **Ghost Meter (0–100)**, a one-line verdict, **receipts linked to sources**, your **fit score** against your resume, and what to do next.
-4. **It keeps working after that (Personal AI):** it remembers your resume, goals and every job you've checked. A daily job re-investigates your active applications, **alerts you if a job turns into a ghost** when one is due, and auto-marks jobs as ghosted after 30 days of silence.
-
+4. **It keeps working after that (Personal AI):** it remembers your resume, goals and every job you've checked. A daily job re-investigates your active applications, **alerts you if a job turns into a ghost**, **drafts a follow-up email** (written by Nemotron Super) when it's been 7 days since you applied, and auto-marks jobs as ghosted after 30 days of silence.
 5. **Company ghost history:** every company you've checked, ranked by its average ghost score ("Ghost factory," "Mixed signals," "Hires for real"), with each job's score and whether that company ghosted you. When you check a new job, it reminds you of your history with that company. It's computed from your own data, so it makes no extra model or search calls.
 6. **Resume keyword gaps:** for every job, the skills the posting asks for, split into missing-required, missing-nice-to-have and already in your resume, with a keyword match score. The Profile tab ranks the skills you're missing most often across every job you've checked. Nemotron Nano extracts the skills during its existing parse step, and the matching (with aliases like Postgres = PostgreSQL) runs in plain Python at no extra cost.
 7. **Worth applying: tailor your resume.** The Profile tab lists every job the agent recommends (low ghost score, not "Skip it"), least ghosty first, each with its keyword match and the required and nice-to-have skills your resume is missing.
@@ -39,9 +38,10 @@ All model calls go to **NVIDIA Nemotron on Nebius Token Factory** (OpenAI-compat
 | Task | Model | Why |
 |---|---|---|
 | Parse the posting into structured JSON | **Nemotron 3 Nano** | Fast, cheap extraction |
+| Draft follow-up emails, and step in when Nano or Ultra can't answer | **Nemotron 3 Super** | Good writing at low latency, reliable backup |
 | Final ghost verdict over all evidence + resume fit | **Nemotron 3 Ultra** | The hard multi-source reasoning call |
 
-If a model is unavailable, `llm.py` falls back down the chain so a demo never dies. Nemotron's `<think>` traces are stripped, JSON is validated and repaired, and **any source URL the model cites that wasn't in the Tavily evidence is dropped**, so the receipts can't be hallucinated.
+If a model is unavailable or gets cut off, `llm.py` retries with more room and then falls back to another model (for example, Super takes over when Nano can't read a posting), so a demo never dies. Nemotron's `<think>` traces are stripped, JSON is validated and repaired, and **any source URL the model cites that wasn't in the Tavily evidence is dropped**, so the receipts can't be hallucinated.
 
 ## How it uses Tavily
 Tavily is the evidence engine:
@@ -50,7 +50,7 @@ Tavily is the evidence engine:
 - Results stream into the UI as each investigation finishes, so you watch the agent work.
 
 ## Nebius services
-- **Nebius Token Factory:** all inference (Nemotron Nano / Ultra).
+- **Nebius Token Factory:** all inference (Nemotron Nano / Super / Ultra).
 - **Nebius Serverless Endpoint:** hosts the web app (`Dockerfile`, port 8000).
 - **Nebius Serverless Job:** runs the daily watcher (`python -m ghostbusted.daily`) on a schedule.
 
@@ -59,7 +59,7 @@ Tavily is the evidence engine:
 Browser ──SSE──> FastAPI (main.py)
                    ├─ analyzer.py   pipeline: read → parse → investigate → red flags → verdict
                    │    ├─ search.py  Tavily Extract + 5 parallel Tavily Searches
-                   │    └─ llm.py     Nemotron routing on Token Factory (nano/ultra + fallback)
+                   │    └─ llm.py     Nemotron routing on Token Factory (nano/super/ultra + fallback)
                    ├─ db.py         SQLite memory: profile, jobs, score history, alerts
                    └─ daily.py      always-on watcher (Nebius Serverless Job)
 ```
@@ -94,7 +94,7 @@ python -m ghostbusted.daily
 | GET | `/api/applications` | your tracked jobs |
 | PATCH | `/api/applications/{id}` | `{status}`: saved, applied, interviewing, offer, rejected, ghosted |
 | GET/PUT | `/api/profile` | resume and goals (memory) |
-| GET | `/api/events` | ghost alerts |
+| GET | `/api/events` | ghost alerts and follow-up reminders (with a drafted email) |
 | POST | `/api/daily` | run the daily watcher now |
 
 ## Responsible design
