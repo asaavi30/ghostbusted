@@ -116,8 +116,20 @@ async def analyze(url: str | None, text: str | None, profile: dict, emit: Emit) 
 
     # 2. parse (Nano)
     await emit({"type": "step", "id": "parse", "status": "running", "label": "Parsing with Nemotron Nano"})
-    parsed, parse_model = await llm.chat_json("nano", PARSE_SYSTEM, posting[:12000], max_tokens=1100)
-    company, title = parsed.get("company") or "Unknown company", parsed.get("title") or "Unknown role"
+    parsed, parse_model = await llm.chat_json("nano", PARSE_SYSTEM, posting[:12000], max_tokens=4000)
+
+    def _usable(p: dict) -> bool:
+        ok = lambda v: isinstance(v, str) and len(v.strip(" .-")) > 1
+        return ok(p.get("title")) and (ok(p.get("company")) or bool(p.get("required_skills")))
+
+    if not _usable(parsed):  # Nano came back empty or cut off: ask Nemotron Super instead
+        try:
+            parsed, parse_model = await llm.chat_json("super", PARSE_SYSTEM, posting[:12000], max_tokens=4000)
+        except Exception:
+            pass
+    clean = lambda v, d: v if isinstance(v, str) and len(v.strip(" .-")) > 1 else d
+    company, title = clean(parsed.get("company"), "Unknown company"), clean(parsed.get("title"), "Unknown role")
+    parsed["company"], parsed["title"] = company, title
     await emit({"type": "step", "id": "parse", "status": "done", "label": "Parsing with Nemotron Nano",
                 "detail": f"{title} at {company}", "model": parse_model})
 

@@ -56,8 +56,10 @@ def score(app: dict, resume: str, radar: dict[str, dict]) -> dict:
         fit_pct = kw["score"]
         fit = 0.4 + 0.6 * fit_pct / 100
         fit_note = f"Keyword match {fit_pct}%"
+    elif not resume.strip():
+        fit_pct, fit, fit_note = None, 0.7, "Add your resume in Profile to score fit"
     else:
-        fit_pct, fit, fit_note = None, 0.7, "Add your resume to score fit"
+        fit_pct, fit, fit_note = None, 0.7, "No skills found in this posting. Paste the full job text and check it again"
 
     r = radar.get(db.norm_company(app.get("company")))
     decided = (r["responded"] + r["ghosted"]) if r else 0
@@ -101,7 +103,9 @@ def score(app: dict, resume: str, radar: dict[str, dict]) -> dict:
             reason += f" Biggest drag: high ghost-job risk (score {ghost})."
     tier = "High" if odds >= 55 else "Medium" if odds >= 30 else "Low"
     return {
-        "id": app["id"], "company": app.get("company"), "title": app.get("title"), "url": app.get("url"),
+        "id": app["id"], "company": app.get("company") or "Unknown company",
+        "title": app.get("title") if len((app.get("title") or "").strip(" .")) > 1 else "Unreadable posting",
+        "url": app.get("url"),
         "status": app.get("status"), "ghost_score": ghost, "odds": odds, "tier": tier,
         "factors": factors, "reason": reason, "posting_age_days": age,
         "missing_required": (kw or {}).get("missing_required", [])[:5],

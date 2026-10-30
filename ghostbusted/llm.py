@@ -80,8 +80,17 @@ async def chat(tier: str, system: str, user: str, *, json_mode: bool = False, ma
                 else:
                     raise
             text = resp.choices[0].message.content or ""
+            # Reasoning models can spend the whole budget thinking and get cut off before answering.
+            # If the answer was truncated, retry once with a much bigger budget.
+            if resp.choices[0].finish_reason == "length" and (json_mode and "}" not in _strip_reasoning(text)):
+                log.warning("model %s ran out of tokens; retrying with a larger budget", model)
+                kwargs["max_tokens"] = max_tokens * 3
+                resp = await client().chat.completions.create(**kwargs)
+                text = resp.choices[0].message.content or ""
             usage_log.append({"tier": t, "model": model, "ms": int((time.perf_counter() - t0) * 1000),
                               "tokens": getattr(resp.usage, "total_tokens", None)})
+            if not _strip_reasoning(text):
+                raise RuntimeError("empty answer")
             return _strip_reasoning(text), model
         except Exception as e:
             log.warning("model %s failed: %s", model, e)
@@ -94,6 +103,15 @@ async def chat_json(tier: str, system: str, user: str, **kw) -> tuple[dict, str]
     try:
         return _parse_json(text), model
     except Exception:
-        # one repair attempt on the cheap model
-        fixed, _ = await chat("nano", "Return ONLY valid JSON. No prose.", f"Fix into valid JSON:\n{text}", max_tokens=1500)
-        return _parse_json(fixed), model
+        pass
+    # Only "repair" text that actually contains an answer; otherwise ask the next model up from scratch.
+    if "{" in text and len(text) > 40:
+        try:
+            fixed, _ = await chat("nano", "Return ONLY valid JSON. No prose.", f"Fix into valid JSON:\n{text}",
+                                  max_tokens=3000)
+            return _parse_json(fixed), model
+        except Exception:
+            pass
+    nxt = {"nano": "super", "super": "ultra"}.get(tier, "super")
+    text, model = await chat(nxt, system, user, json_mode=True, **kw)
+    return _parse_json(text), model
