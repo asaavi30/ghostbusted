@@ -1,6 +1,6 @@
 # 👻 GhostBusted: is this job even real?
 
-**A personal AI agent that tells job seekers whether a posting is a ghost job, shows the receipts, and keeps watching every job you apply to.**
+**Your personal AI job-hunt agent: it busts ghost jobs with receipts, keeps watching every application, and keeps you consistent with daily streaks.**
 
 Built for the **Nebius x NVIDIA Global AI Hackathon, Personal AI Track.**
 © 2026 Asaavi Anil Tupsounder · License: Apache 2.0.
