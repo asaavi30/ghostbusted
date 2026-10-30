@@ -22,7 +22,7 @@ Ghost jobs are postings with no real intent to hire: evergreen "talent pools," r
    - the company's recent funding and health
    - red flags in the posting text (talent-pool language, no salary, stale date, unrealistic entry-level requirements)
 3. You get a **Ghost Meter (0–100)**, a one-line verdict, **receipts linked to sources**, your **fit score** against your resume, and what to do next.
-4. **It keeps working after that (Personal AI):** it remembers your resume, goals and every job you've checked. A daily job re-investigates your active applications, **alerts you if a job turns into a ghost**, **drafts a follow-up email** when one is due, and auto-marks jobs as ghosted after 30 days of silence.
+4. **It keeps working after that (Personal AI):** it remembers your resume, goals and every job you've checked. A daily job re-investigates your active applications, **alerts you if a job turns into a ghost** when one is due, and auto-marks jobs as ghosted after 30 days of silence.
 
 5. **Company ghost history:** every company you've checked, ranked by its average ghost score ("Ghost factory," "Mixed signals," "Hires for real"), with each job's score and whether that company ghosted you. When you check a new job, it reminds you of your history with that company. It's computed from your own data, so it makes no extra model or search calls.
 6. **Resume keyword gaps:** for every job, the skills the posting asks for, split into missing-required, missing-nice-to-have and already in your resume, with a keyword match score. The Profile tab ranks the skills you're missing most often across every job you've checked. Nemotron Nano extracts the skills during its existing parse step, and the matching (with aliases like Postgres = PostgreSQL) runs in plain Python at no extra cost.
@@ -94,7 +94,7 @@ python -m ghostbusted.daily
 | GET | `/api/applications` | your tracked jobs |
 | PATCH | `/api/applications/{id}` | `{status}`: saved, applied, interviewing, offer, rejected, ghosted |
 | GET/PUT | `/api/profile` | resume and goals (memory) |
-| GET | `/api/events` | ghost alerts and follow-up nudges |
+| GET | `/api/events` | ghost alerts |
 | POST | `/api/daily` | run the daily watcher now |
 
 ## Responsible design
